@@ -117,3 +117,21 @@ def signup_for_activity(activity_name: str, email: str):
     # Add student
     activity.setdefault("participants", []).append(normalized_email)
     return {"message": f"Signed up {email} for {activity_name}"}
+
+
+@app.delete("/activities/{activity_name}/participants")
+def remove_participant(activity_name: str, email: str):
+    """Remove a participant from an activity."""
+    if activity_name not in activities:
+        raise HTTPException(status_code=404, detail="Activity not found")
+
+    activity = activities[activity_name]
+    normalized_email = email.strip().lower()
+    participants = [p.strip().lower() for p in activity.get("participants", [])]
+
+    if normalized_email not in participants:
+        raise HTTPException(status_code=404, detail="Participant not found in this activity")
+
+    # Remove the participant and return updated state
+    activity["participants"] = [p for p in activity.get("participants", []) if p.strip().lower() != normalized_email]
+    return {"message": f"Unregistered {email} from {activity_name}"}
