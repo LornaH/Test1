@@ -41,6 +41,46 @@ activities = {
     }
 }
 
+# Additional activities added per request
+activities.update({
+    "Soccer Team": {
+        "description": "Outdoor team sport focused on fitness and teamwork",
+        "schedule": "Tuesdays and Thursdays, 4:00 PM - 6:00 PM",
+        "max_participants": 22,
+        "participants": ["liam@mergington.edu"]
+    },
+    "Basketball Club": {
+        "description": "Practice shooting, defense, and team plays",
+        "schedule": "Wednesdays and Fridays, 4:00 PM - 6:00 PM",
+        "max_participants": 15,
+        "participants": ["mia@mergington.edu"]
+    },
+    "Art Workshop": {
+        "description": "Drawing, painting, and mixed-media projects for all skill levels",
+        "schedule": "Mondays, 3:30 PM - 5:00 PM",
+        "max_participants": 18,
+        "participants": ["ava@mergington.edu"]
+    },
+    "Drama Club": {
+        "description": "Acting, stagecraft, and production for school plays",
+        "schedule": "Thursdays, 3:30 PM - 5:30 PM",
+        "max_participants": 25,
+        "participants": ["noah@mergington.edu"]
+    },
+    "Math Circle": {
+        "description": "Problem-solving sessions and math competitions preparation",
+        "schedule": "Fridays, 3:30 PM - 5:00 PM",
+        "max_participants": 20,
+        "participants": ["sophia@mergington.edu"]
+    },
+    "Science Club": {
+        "description": "Hands-on experiments and science fair project mentoring",
+        "schedule": "Wednesdays, 3:30 PM - 5:00 PM",
+        "max_participants": 20,
+        "participants": ["liam@mergington.edu"]
+    }
+})
+
 
 @app.get("/")
 def root():
@@ -54,7 +94,7 @@ def get_activities():
 
 @app.post("/activities/{activity_name}/signup")
 def signup_for_activity(activity_name: str, email: str):
-    """Sign up a student for an activity"""
+    """Sign up a student for an activity with duplicate and capacity checks."""
     # Validate activity exists
     if activity_name not in activities:
         raise HTTPException(status_code=404, detail="Activity not found")
@@ -62,6 +102,18 @@ def signup_for_activity(activity_name: str, email: str):
     # Get the specific activity
     activity = activities[activity_name]
 
+    # Normalize the email for comparison
+    normalized_email = email.strip().lower()
+
+    # Check for duplicate signup
+    existing = [p.strip().lower() for p in activity.get("participants", [])]
+    if normalized_email in existing:
+        raise HTTPException(status_code=400, detail="Student already signed up for this activity")
+
+    # Check capacity
+    if len(activity.get("participants", [])) >= activity.get("max_participants", 0):
+        raise HTTPException(status_code=400, detail="Activity is full")
+
     # Add student
-    activity["participants"].append(email)
+    activity.setdefault("participants", []).append(normalized_email)
     return {"message": f"Signed up {email} for {activity_name}"}
